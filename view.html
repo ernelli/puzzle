@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js canvas - geometry - cube</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+
+		<script src="http://threejs.org/build/three.min.js"></script>
+
+                <script src="puzzle.js"></script>
+
+<!--		<script src="js/libs/stats.min.js"></script> -->
+
+		<script>
+
+			var container, stats;
+
+			var camera, scene, renderer;
+
+                        var puzzle, group, plane;
+
+                        var size = 40;
+
+			var targetRotation = 0;
+			var targetRotationOnMouseDown = 0;
+
+			var mouseX = 0;
+			var mouseXOnMouseDown = 0;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				var info = document.createElement( 'div' );
+				info.style.position = 'absolute';
+				info.style.top = '10px';
+				info.style.width = '100%';
+				info.style.textAlign = 'center';
+				info.innerHTML = 'Drag to spin the group';
+				container.appendChild( info );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+				camera.position.y = 150;
+				camera.position.z = 500;
+
+				scene = new THREE.Scene();
+
+				// Group
+
+
+                            puzzle = scanGrid(getGrid());
+                            //twistPuzzle(puzzle, 1);
+                            //console.log("steps:" , steps);
+
+                            group = new THREE.Object3D();
+
+                            var cube;
+
+                            for(var n = 0; n < puzzle.length; n++) {
+
+				var geometry = new THREE.BoxGeometry( size, size, size );
+
+			    for ( var i = 0; i < geometry.faces.length; i++ ) {
+
+					geometry.faces[ i ].color.setHex( n & 1 ? 0xc0c0c0 : 0x404040);
+
+				}
+
+				var material = new THREE.MeshBasicMaterial( { vertexColors: THREE.FaceColors, overdraw: 0.5 } );
+
+				cube = new THREE.Mesh( geometry, material );
+                                cube.position.x = size*(puzzle[n][0]-6);
+                                cube.position.z = size*(puzzle[n][1]-6);
+                                cube.position.y = size*(puzzle[n][2]);
+				group.add( cube );
+                            }
+				group.position.y = 150;
+
+                            scene.add(group);
+
+				// Plane
+                            /*
+
+				var geometry = new THREE.PlaneGeometry( 200, 200 );
+				geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+
+				var material = new THREE.MeshBasicMaterial( { color: 0xe0e0e0, overdraw: 0.5 } );
+
+				plane = new THREE.Mesh( geometry, material );
+				scene.add( plane );
+*/
+
+                                var light = new THREE.PointLight(0xffff00, 1, 100);
+                                light.position.set(-400, 1000, 400);
+                                scene.add(light);
+
+				renderer = new THREE.CanvasRenderer();
+				renderer.setClearColor( 0xf0f0f0 );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container.appendChild( renderer.domElement );
+
+/*				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+*/
+				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+
+                            document.addEventListener('keydown', function(ev) {
+                                console.log("got key: ", ev.which);
+                                if(ev.which === 32) {
+                                    twistPuzzle(puzzle, 1);
+                                    for(var n = 0; n < puzzle.length; n++) {
+                                        group.children[n].position.x = size*(puzzle[n][0]-6);
+                                        group.children[n].position.z = size*(puzzle[n][1]-6);
+                                        group.children[n].position.y = size*(puzzle[n][2]);
+                                    }
+                                }
+                            });
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function onDocumentMouseDown( event ) {
+
+				event.preventDefault();
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+				document.addEventListener( 'mouseout', onDocumentMouseOut, false );
+
+				mouseXOnMouseDown = event.clientX - windowHalfX;
+				targetRotationOnMouseDown = targetRotation;
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				mouseX = event.clientX - windowHalfX;
+
+				targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.02;
+
+			}
+
+			function onDocumentMouseUp( event ) {
+
+				document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+				document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+
+			}
+
+			function onDocumentMouseOut( event ) {
+
+				document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+				document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+
+			}
+
+			function onDocumentTouchStart( event ) {
+
+				if ( event.touches.length === 1 ) {
+
+					event.preventDefault();
+
+					mouseXOnMouseDown = event.touches[ 0 ].pageX - windowHalfX;
+					targetRotationOnMouseDown = targetRotation;
+
+				}
+
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				if ( event.touches.length === 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					targetRotation = targetRotationOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.05;
+
+				}
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				//stats.update();
+
+			}
+
+			function render() {
+
+				//plane.rotation.y = 
+                            group.rotation.y += ( targetRotation - group.rotation.y ) * 0.05;
+                            group.rotation.z = group.rotation.y;
+			    renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>
