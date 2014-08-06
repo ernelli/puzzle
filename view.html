@@ -24,311 +24,345 @@
 
 		<script>
 
-                        function $(sel) {
-                           return document.querySelector(sel);
-                        }
-
-			var container, stats;
-
-			var camera, scene, renderer;
-
-                        var puzzle, group, plane;
-
-                        var size = 40;
-
-                        var radious = 160;
-                        var theta = 45, phi = 0;
-                       
-                        var isMouseDown = false;
-
-			var onMouseDownTheta;
-			var onMouseDownPhi;
-			var onMouseDownPosition = {};
-
-			var targetRotationY = 0;
-			var targetRotationYOnMouseDown = 0;
-
-			var targetRotationX = 0;
-			var targetRotationXOnMouseDown = 0;
+function $(sel) {
+    return document.querySelector(sel);
+}
 
 
-			var mouseX = 0;
-			var mouseXOnMouseDown = 0;
 
-			var mouseY = 0;
-			var mouseYOnMouseDown = 0;
+var zeroV = new THREE.Vector3(0,0,0);
 
+var container, stats;
 
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
-
-			init();
-			animate();
-
-			function init() {
-
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
-
-				var info = document.createElement( 'div' );
-				info.style.position = 'relative';
-				info.style.top = '10px';
-				info.style.width = '100%';
-				info.style.textAlign = 'center';
-				info.innerHTML = 'Drag to spin the group';
-				container.appendChild( info );
-                                var campos = document.createElement('div');
-                                campos.style.height = "16px";
-                                campos.id = "campos";
-                                campos.innerHTML="theta: 0, phi: 0";
-                                container.appendChild(campos);
-
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
-                                //camera.lookAt(new THREE.Vector3(0,0,0));
-				//camera.position.y = 150;
-				//camera.position.z = 500;
-
-				camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
-				camera.position.y = radious * Math.sin( phi * Math.PI / 360 );
-				camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
-
-                                camera.target.position.y = 200;
-
-				camera.updateMatrix();
-				scene = new THREE.Scene();
-
-				// Group
+var markCamera = false;
 
 
-                            puzzle = scanGrid(getGrid());
-                            //twistPuzzle(puzzle, 1);
-                            //console.log("steps:" , steps);
 
-                            group = new THREE.Object3D();
+var camera, scene, renderer;
 
-                            var cube;
+var marker;
 
-                            for(var n = 0; n < puzzle.length; n++) {
+var puzzle, group, plane;
 
-				var geometry = new THREE.BoxGeometry( size, size, size );
+var size = 40;
 
-			    for ( var i = 0; i < geometry.faces.length; i++ ) {
+var radious = 160;
+var theta = 45, phi = 0;
 
-					geometry.faces[ i ].color.setHex( n & 1 ? 0xc0c0c0 : 0x404040);
+var isMouseDown = false;
 
-				}
+var onMouseDownTheta;
+var onMouseDownPhi;
+var onMouseDownPosition = {};
 
-				var material = new THREE.MeshBasicMaterial( { vertexColors: THREE.FaceColors, overdraw: 0.5 } );
+var targetRotationY = 0;
+var targetRotationYOnMouseDown = 0;
 
-				cube = new THREE.Mesh( geometry, material );
-                                cube.position.x = size*(puzzle[n][0]-6);
-                                cube.position.z = size*(puzzle[n][1]-6);
-                                cube.position.y = size*(puzzle[n][2]);
-				group.add( cube );
-                            }
-				group.position.y = 0;
+var targetRotationX = 0;
+var targetRotationXOnMouseDown = 0;
 
-                            scene.add(group);
 
-				// Plane
-                            /*
+var mouseX = 0;
+var mouseXOnMouseDown = 0;
 
-				var geometry = new THREE.PlaneGeometry( 200, 200 );
-				geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+var mouseY = 0;
+var mouseYOnMouseDown = 0;
 
-				var material = new THREE.MeshBasicMaterial( { color: 0xe0e0e0, overdraw: 0.5 } );
 
-				plane = new THREE.Mesh( geometry, material );
-				scene.add( plane );
-*/
+var windowHalfX = window.innerWidth / 2;
+var windowHalfY = window.innerHeight / 2;
 
-                                var light = new THREE.PointLight(0xffff00, 1, 100);
-                                light.position.set(-400, 1000, 400);
-                                scene.add(light);
+init();
+animate();
 
-				renderer = new THREE.CanvasRenderer();
-				renderer.setClearColor( 0xf0f0f0 );
-				renderer.setSize( window.innerWidth, window.innerHeight );
+function init() {
 
-				container.appendChild( renderer.domElement );
+    container = document.createElement( 'div' );
+    document.body.appendChild( container );
 
-/*				stats = new Stats();
+    var info = document.createElement( 'div' );
+    info.style.position = 'relative';
+    info.style.top = '10px';
+    info.style.width = '100%';
+    info.style.textAlign = 'center';
+    info.innerHTML = 'Drag to spin the group';
+    container.appendChild( info );
+    var campos = document.createElement('div');
+    campos.style.height = "16px";
+    campos.id = "campos";
+    campos.innerHTML="theta: 0, phi: 0";
+    container.appendChild(campos);
+
+    camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+
+
+    camera.up = new THREE.Vector3(0,1,0);
+    camera.lookAt(zeroV);
+
+    //camera.lookAt(new THREE.Vector3(0,0,0));
+    //camera.position.y = 150;
+    //camera.position.z = 500;
+
+    camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+    camera.position.y = radious * Math.sin( phi * Math.PI / 360 );
+    camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+
+
+
+    //camera.target.position.y = 200;
+
+    camera.updateMatrix();
+    scene = new THREE.Scene();
+
+    // Group
+
+
+    puzzle = scanGrid(getGrid());
+    //twistPuzzle(puzzle, 1);
+    //console.log("steps:" , steps);
+
+    group = new THREE.Object3D();
+
+    var cube;
+
+    var material = new THREE.MeshBasicMaterial( { vertexColors: THREE.FaceColors, overdraw: 0.5 } );
+
+    for(var n = 0; n < puzzle.length; n++) {
+
+	var geometry = new THREE.BoxGeometry( size, size, size );
+
+	for ( var i = 0; i < geometry.faces.length; i++ ) {
+
+	    geometry.faces[ i ].color.setHex( n & 1 ? 0xc0c0c0 : 0x404040);
+
+	}
+
+
+	cube = new THREE.Mesh( geometry, material );
+        cube.position.x = size*(puzzle[n][0]-6);
+        cube.position.z = size*(puzzle[n][1]-6);
+        cube.position.y = size*(puzzle[n][2]);
+	group.add( cube );
+    }
+    group.position.y = 0;
+
+    scene.add(group);
+
+    if(markCamera) {
+        marker = new THREE.Mesh( new THREE.BoxGeometry( size, size, size ), material );
+        scene.add(marker);
+    }
+
+    // Plane
+    /*
+
+      var geometry = new THREE.PlaneGeometry( 200, 200 );
+      geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+
+      var material = new THREE.MeshBasicMaterial( { color: 0xe0e0e0, overdraw: 0.5 } );
+
+      plane = new THREE.Mesh( geometry, material );
+      scene.add( plane );
+    */
+
+    var light = new THREE.PointLight(0xffff00, 1, 100);
+    light.position.set(-400, 1000, 400);
+    scene.add(light);
+
+    renderer = new THREE.CanvasRenderer();
+    renderer.setClearColor( 0xf0f0f0 );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    container.appendChild( renderer.domElement );
+
+    /*				stats = new Stats();
 				stats.domElement.style.position = 'absolute';
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
-*/
-				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
-				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
-                            document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
+    */
+    document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+    document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+    document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+    document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
 
-                            document.addEventListener('keydown', function(ev) {
-                                console.log("got key: ", ev.which);
-                                if(ev.which === 32) {
-                                    twistPuzzle(puzzle, 1);
-                                    for(var n = 0; n < puzzle.length; n++) {
-                                        group.children[n].position.x = size*(puzzle[n][0]-6);
-                                        group.children[n].position.z = size*(puzzle[n][1]-6);
-                                        group.children[n].position.y = size*(puzzle[n][2]);
-                                    }
-                                }
-                            });
+    document.addEventListener('keydown', function(ev) {
+        console.log("got key: ", ev.which);
+        if(ev.which === 32) {
+            twistPuzzle(puzzle, 1);
+            for(var n = 0; n < puzzle.length; n++) {
+                group.children[n].position.x = size*(puzzle[n][0]-6);
+                group.children[n].position.z = size*(puzzle[n][1]-6);
+                group.children[n].position.y = size*(puzzle[n][2]);
+            }
+        }
+    });
 
-				//
+    //
 
-				window.addEventListener( 'resize', onWindowResize, false );
+    window.addEventListener( 'resize', onWindowResize, false );
 
-			}
+}
 
-			function onWindowResize() {
+function onWindowResize() {
 
-				windowHalfX = window.innerWidth / 2;
-				windowHalfY = window.innerHeight / 2;
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
 
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( window.innerWidth, window.innerHeight );
 
-			}
+}
 
-			//
+//
 
-			function onDocumentMouseDown( event ) {
+function onDocumentMouseDown( event ) {
 
-				event.preventDefault();
+    event.preventDefault();
 
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-				document.addEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.addEventListener( 'mouseout', onDocumentMouseOut, false );
+    document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    document.addEventListener( 'mouseup', onDocumentMouseUp, false );
+    document.addEventListener( 'mouseout', onDocumentMouseOut, false );
 
-				mouseXOnMouseDown = event.clientX - windowHalfX;
-                                mouseYOnMouseDown = event.clientY - windowHalfY;
+    mouseXOnMouseDown = event.clientX - windowHalfX;
+    mouseYOnMouseDown = event.clientY - windowHalfY;
 
-				targetRotationYOnMouseDown = targetRotationY;
-				targetRotationXOnMouseDown = targetRotationX;
-                            
-
-
-				onMouseDownTheta = theta;
-				onMouseDownPhi = phi;
-				onMouseDownPosition.x = event.clientX;
-				onMouseDownPosition.y = event.clientY;
-
-                            console.log("onMouseDownPosition: ", onMouseDownPosition);
-
-                            isMouseDown = true;
-
-			}
-
-			function onDocumentMouseMove( event ) {
-                      
-
-				mouseX = event.clientX - windowHalfX;
-				mouseY = event.clientY - windowHalfY;
-
-				//targetRotationY = targetRotationYOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.02;
-				//targetRotationX = targetRotationXOnMouseDown + ( mouseY - mouseYOnMouseDown ) * 0.02;
+    targetRotationYOnMouseDown = targetRotationY;
+    targetRotationXOnMouseDown = targetRotationX;
+    
 
 
-                            if ( isMouseDown ) {
-                                
-                                theta = - ( ( event.clientX - onMouseDownPosition.x ) * 0.5 ) + onMouseDownTheta;
-                                phi = ( ( event.clientY - onMouseDownPosition.y ) * 0.5 ) + onMouseDownPhi;
-                                
-                                phi = Math.min( 180, Math.max( 0, phi ) );
-                                
+    onMouseDownTheta = theta;
+    onMouseDownPhi = phi;
+    onMouseDownPosition.x = event.clientX;
+    onMouseDownPosition.y = event.clientY;
 
-                                console.log("theta, phi: ", theta, phi);
-                                $('#campos').innerHTML = "theta: " + theta + ", phi: " + phi;
+    console.log("onMouseDownPosition: ", onMouseDownPosition);
 
-                                camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
-                                camera.position.y = radious * Math.sin( phi * Math.PI / 360 );
-                                camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+    isMouseDown = true;
 
-                                console.log("camera pos: ", camera.position);
-                                console.log("camera target: ", camera.target);
+}
 
-                                camera.updateMatrix();
+function onDocumentMouseMove( event ) {
+    
+
+    mouseX = event.clientX - windowHalfX;
+    mouseY = event.clientY - windowHalfY;
+
+    //targetRotationY = targetRotationYOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.02;
+    //targetRotationX = targetRotationXOnMouseDown + ( mouseY - mouseYOnMouseDown ) * 0.02;
 
 
-                            }
+    if ( isMouseDown ) {
+        
+        theta = - ( ( event.clientX - onMouseDownPosition.x ) * 0.5 ) + onMouseDownTheta;
+        phi = ( ( event.clientY - onMouseDownPosition.y ) * 0.5 ) + onMouseDownPhi;
+        
+        phi = Math.min( 180, Math.max( -180, phi ) );
+        
 
-			}
+        console.log("theta, phi: ", theta, phi);
+        $('#campos').innerHTML = "theta: " + theta + ", phi: " + phi + ", radius: " + radious;
 
-			function onDocumentMouseUp( event ) {
+        if(!markCamera) {
 
-                            isMouseDown = false;
+            camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+            camera.position.y = radious * Math.sin( phi * Math.PI / 360 );
+            camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
 
-				document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-				document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
+            camera.lookAt(zeroV);
+        } else {
+            
+            var mrad = 300;
+            marker.position.x = mrad * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+            marker.position.y = mrad * Math.sin( phi * Math.PI / 360 );
+            marker.position.z = mrad * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+        }
 
-			}
+        console.log("camera pos: ", camera.position);
+        console.log("camera target: ", camera.target);
 
-			function onDocumentMouseOut( event ) {
+        camera.updateMatrix();
 
-				document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-				document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
-				document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
 
-			}
+    }
 
-			function onDocumentTouchStart( event ) {
+}
 
-				if ( event.touches.length === 1 ) {
+function onDocumentMouseUp( event ) {
 
-					event.preventDefault();
+    isMouseDown = false;
 
-					mouseXOnMouseDown = event.touches[ 0 ].pageX - windowHalfX;
-					targetRotationYOnMouseDown = targetRotationY;
+    document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+    document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+    document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
 
-				}
+}
 
-			}
+function onDocumentMouseOut( event ) {
 
-			function onDocumentTouchMove( event ) {
+    document.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+    document.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+    document.removeEventListener( 'mouseout', onDocumentMouseOut, false );
 
-				if ( event.touches.length === 1 ) {
+}
 
-					event.preventDefault();
+function onDocumentTouchStart( event ) {
 
-					mouseX = event.touches[ 0 ].pageX - windowHalfX;
-					targetRotationY = targetRotationYOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.05;
+    if ( event.touches.length === 1 ) {
 
-				}
+	event.preventDefault();
 
-			}
+	mouseXOnMouseDown = event.touches[ 0 ].pageX - windowHalfX;
+	targetRotationYOnMouseDown = targetRotationY;
 
-                        function onDocumentMouseWheel( event ) {
+    }
 
-				radious -= event.wheelDeltaY*0.2;
+}
 
-				camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
-				camera.position.y = radious * Math.sin( phi * Math.PI / 360 );
-				camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
-				camera.updateMatrix();
-                        }
+function onDocumentTouchMove( event ) {
 
-			//
+    if ( event.touches.length === 1 ) {
 
-			function animate() {
+	event.preventDefault();
 
-				requestAnimationFrame( animate );
+	mouseX = event.touches[ 0 ].pageX - windowHalfX;
+	targetRotationY = targetRotationYOnMouseDown + ( mouseX - mouseXOnMouseDown ) * 0.05;
 
-				render();
-				//stats.update();
+    }
 
-			}
+}
 
-			function render() {
+function onDocumentMouseWheel( event ) {
 
-				//plane.rotation.y = 
-                            group.rotation.y += ( targetRotationY - group.rotation.y ) * 0.05;
-                            group.rotation.x += ( targetRotationX - group.rotation.x ) * 0.05;
-			    renderer.render( scene, camera );
+    radious -= event.wheelDeltaY*0.2;
 
-			}
+    camera.position.x = radious * Math.sin( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+    camera.position.y = radious * Math.sin( phi * Math.PI / 360 );
+    camera.position.z = radious * Math.cos( theta * Math.PI / 360 ) * Math.cos( phi * Math.PI / 360 );
+    camera.updateMatrix();
+}
+
+//
+
+function animate() {
+
+    requestAnimationFrame( animate );
+
+    render();
+    //stats.update();
+
+}
+
+function render() {
+
+    //plane.rotation.y = 
+    group.rotation.y += ( targetRotationY - group.rotation.y ) * 0.05;
+    group.rotation.x += ( targetRotationX - group.rotation.x ) * 0.05;
+    renderer.render( scene, camera );
+
+}
 
 		</script>
 
