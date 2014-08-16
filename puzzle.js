@@ -114,23 +114,50 @@ function scanGrid(grid) {
 function rotateVectors(vectors, idx, steps) {
     var i, r0, r1, o0, o1;
 
-    console.log("twist vectors: ", vectors);
+    //console.log("twist vectors: ", vectors);
 
     o0 = vectors[0][idx[0]];
     o1 = vectors[0][idx[1]];
 
     for(i = 0; i < vectors.length; i++) {
-        r0 = -(vectors[i][idx[1]] -o1);
-        r1 = (vectors[i][idx[0]] - o0);
-        vectors[i][idx[0]] = r0 + o1;
-        vectors[i][idx[1]] = r1 + o0;
+        r0 = -(vectors[i][idx[1]] - o1);
+        r1 =  (vectors[i][idx[0]] - o0);
+        vectors[i][idx[0]] = r0 + o0;
+        vectors[i][idx[1]] = r1 + o1;
     }
 
-    console.log("twisted vectors: ", vectors);
+    //console.log("twisted vectors: ", vectors);
 }
 
-function twistPuzzle(puzzle, turns) {
-    rotateVectors(puzzle.slice(2), [2, 1], 1);
+function dumpRotV(puzzle, node) {
+    if(node + 1 >= puzzle.length) {
+        return;
+    }
+
+    var p0 = puzzle[node];
+    var p1 = puzzle[node+1];
+
+    var dirV = [ p1[0] - p0[0], p1[1] - p0[1] , p1[2] - p0[2] ];
+    var zeroV = dirV.indexOf(0);
+    var rotV = [0, 1, 2];
+    rotV.splice(zeroV, 1);
+    console.log("dirV: ", dirV, ", rotV: ", rotV);
+}
+
+function twistPuzzle(puzzle, node, turns) {
+    if(node + 1 >= puzzle.length) {
+        return;
+    }
+
+    var p0 = puzzle[node];
+    var p1 = puzzle[node+1];
+
+    var dirV = [ p1[0] - p0[0], p1[1] - p0[1] , p1[2] - p0[2] ];
+    var zeroV = dirV.indexOf(0);
+    var rotV = [1, 0, 2];
+    rotV.splice(zeroV, 1);
+
+    rotateVectors(puzzle.slice(node), rotV, 1);
 }
 
 //var steps = scanGrid(getGrid());
