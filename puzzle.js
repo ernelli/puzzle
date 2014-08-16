@@ -138,9 +138,15 @@ function dumpRotV(puzzle, node) {
     var p1 = puzzle[node+1];
 
     var dirV = [ p1[0] - p0[0], p1[1] - p0[1] , p1[2] - p0[2] ];
-    var zeroV = dirV.indexOf(0);
-    var rotV = [0, 1, 2];
-    rotV.splice(zeroV, 1);
+
+    var rotV; // = [0, 1, 2];
+    if(dirV[0]) {
+        rotV = [1, 2];
+    } else if(dirV[1]) {
+        rotV = [0, 2];
+    } else if(dirV[2]) {
+        rotV = [0, 1];
+    }
     console.log("dirV: ", dirV, ", rotV: ", rotV);
 }
 
@@ -153,10 +159,14 @@ function twistPuzzle(puzzle, node, turns) {
     var p1 = puzzle[node+1];
 
     var dirV = [ p1[0] - p0[0], p1[1] - p0[1] , p1[2] - p0[2] ];
-    var zeroV = dirV.indexOf(0);
-    var rotV = [1, 0, 2];
-    rotV.splice(zeroV, 1);
-
+    var rotV; // = [0, 1, 2];
+    if(dirV[0]) {
+        rotV = [1, 2];
+    } else if(dirV[1]) {
+        rotV = [0, 2];
+    } else if(dirV[2]) {
+        rotV = [0, 1];
+    }
     rotateVectors(puzzle.slice(node), rotV, 1);
 }
 
