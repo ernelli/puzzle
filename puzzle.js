@@ -65,9 +65,6 @@ function gridEmpty(grid) {
 function scanGrid(grid) {
     var tdir = [ [1, 0], [-1, 0], [0, 1], [0, -1 ] ];
     
-    var dir = -1;
-      
-
     var c = grid[0].indexOf(1);
     var r = 0;
     var steps = [];
@@ -82,19 +79,10 @@ function scanGrid(grid) {
         steps.push([r,c, 0]);
         grid[r][c] = 0;
 
-
         for(i = 0; i < 4; i++) {
-
             if(grid[r + tdir[i][0]] && grid[r + tdir[i][0]][ c + tdir[i][1] ]) {
                 r += tdir[i][0];
                 c += tdir[i][1];
-
-                if(dir !== -1 && dir !== i) {
-                    twists.push( [steps.length-2, dir]);
-                }
-
-                dir = i;
-
                 break;
             }
         }
@@ -103,6 +91,26 @@ function scanGrid(grid) {
     //console.log("twists: ", twists);
 
     return steps;
+}
+
+function equal(v0, v1) {
+    return v0[0] === v1[0] && v0[1] === v1[1] && v0[2] === v1[2];
+}
+
+function scanTwists(puzzle) {
+    var i, twists = [], dirV0;
+
+    for(i = 0; i < puzzle.length-1; i++) {
+        var p0 = puzzle[i];
+        var p1 = puzzle[i+1];
+
+        var dirV1 = [ p1[0] - p0[0], p1[1] - p0[1] , p1[2] - p0[2] ];
+        if(dirV0 && !equal(dirV0, dirV1) ) {
+            twists.push(i-1);
+        }
+        dirV0 = dirV1;
+    }
+    return twists;
 }
 
 //      |
@@ -170,5 +178,104 @@ function twistPuzzle(puzzle, node, turns) {
     rotateVectors(puzzle.slice(node), rotV, 1);
 }
 
-//var steps = scanGrid(getGrid());
+var maxStep = 0;
+
+function solvePuzzle(puzzle, twists, step) {
+    var i, j, k;
+
+    if(step >= twists.length) {
+        console.log("step: " + step + " exceeds twists: " + twists.length);
+        return;
+    }
+
+    if(step > maxStep) {
+        console.log("step: " + step);
+        maxStep = step;
+    }
+
+    for(i = 0; i < 3; i++) {
+        //console.log("twist: " + i + ", step: " + step);
+        twistPuzzle(puzzle, twists[step], 1);
+
+        // check that bounding box is a 3x3 cube
+        var min = puzzle[0].slice(0);
+        var max = puzzle[0].slice(0);
+        
+        var end = twists[step+1]+1
+
+        if(step === 15) {
+            end = puzzle.length;
+            console.log("test until: " + end);
+        }
+
+        for(j = 0; j < end; j++) {
+            var p = puzzle[j];
+            for(k = 0; k < 3; k++) {
+                if(p[k] > max[k]) {
+                    max[k] = p[k];
+                } else if(p[k] < min[k]) {
+                    min[k] = p[k];
+                }
+                if(max[k] - min[k] > 2) {
+                    break;
+                }
+            }
+            if(k < 3) {
+                break;
+            }
+        }
+        if(j < end) {
+            continue;
+        }
+
+        if(step === 15) {
+            console.log("bbox ok, j: " + j + ", k: " + k + ", min: ", min, ", max: ", max);
+
+            // look for self intersect
+            for(j = 0; j < end; j++) {
+                for(k = 1; k < j; k++) {
+                    if(equal(puzzle[j], puzzle[k])) {
+                        console.log("self intersect");
+                        break;
+                    }
+                }
+                if(k < j) {
+                    break;
+                }
+            }
+            if(j < end) {
+                continue;
+            }
+        }            
+
+
+        if(step === twists.length-1) {
+            console.log("puzzle solved at step: " + step);
+            return puzzle;
+        }
+
+        console.log("search for  solution at step: " + (step+1));
+        var solution = solvePuzzle(puzzle, twists, step+1);
+        if(solution) {
+            return solution;
+        }
+    }
+    // restore puzzle at current step before return
+    twistPuzzle(puzzle, twists[step], 1);
+    if(step === 15) {
+        console.log("all combinations exhausted, solution not found, puzzle in original shape");
+    } else {
+        //console.log("dead end at step: " + step);
+    }
+}
+
+var puzzle = scanGrid(getGrid());
+var twists = scanTwists(puzzle);
+
+console.log("twists size: ", twists.length);
+
+var solution = solvePuzzle(puzzle, twists, 1);
+console.log("solution: ", solution);
+
+
 //console.log("steps:" , steps);

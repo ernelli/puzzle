@@ -42,7 +42,7 @@ var camera, scene, renderer;
 
 var marker;
 
-var puzzle, group, plane;
+var puzzle, twists, group, plane;
 var nodeIndex = 0;
 
 var size = 40;
@@ -78,7 +78,7 @@ animate();
 
 function  updatePuzzle() {
     for(var n = 0; n < puzzle.length; n++) {
-        group.children[n].material.color = new  THREE.Color( n === nodeIndex ? 0xffc0c0 : (n & 1 ? 0xc0c0c0 : 0x404040) );
+        group.children[n].material.color = new  THREE.Color( n === nodeIndex ? 0xffc0c0 : twists.indexOf(n) !== -1 ? 0xc0ffc0 : (n & 1 ? 0xc0c0c0 : 0x404040) );
 
         group.children[n].position.x = size*(puzzle[n][0]-6);
         group.children[n].position.z = size*(puzzle[n][1]-6);
@@ -129,6 +129,7 @@ function init() {
 
 
     puzzle = scanGrid(getGrid());
+    twists = scanTwists(puzzle);
     //twistPuzzle(puzzle, 1);
     //console.log("steps:" , steps);
 
@@ -209,7 +210,10 @@ function init() {
             nodeIndex--;
             updatePuzzle();
             dumpRotV(puzzle, nodeIndex);
-        } 
+        } else if(ev.which === 13) {
+            puzzle = solvePuzzle(puzzle, twists, 1);
+            updatePuzzle();
+        }
     });
 
     //
