@@ -180,8 +180,12 @@ function twistPuzzle(puzzle, node, turns) {
 
 var maxStep = 0;
 
+var niter = 0;
+
 function solvePuzzle(puzzle, twists, step) {
     var i, j, k;
+
+    niter++;
 
     if(step >= twists.length) {
         console.log("step: " + step + " exceeds twists: " + twists.length);
@@ -193,7 +197,7 @@ function solvePuzzle(puzzle, twists, step) {
         maxStep = step;
     }
 
-    for(i = 0; i < 3; i++) {
+    for(i = 0; i < 4; i++) {
         //console.log("twist: " + i + ", step: " + step);
         twistPuzzle(puzzle, twists[step], 1);
 
@@ -205,7 +209,7 @@ function solvePuzzle(puzzle, twists, step) {
 
         if(step === 15) {
             end = puzzle.length;
-            console.log("test until: " + end);
+            //console.log("test until: " + end);
         }
 
         for(j = 0; j < end; j++) {
@@ -229,13 +233,13 @@ function solvePuzzle(puzzle, twists, step) {
         }
 
         if(step === 15) {
-            console.log("bbox ok, j: " + j + ", k: " + k + ", min: ", min, ", max: ", max);
+            //console.log("bbox ok, j: " + j + ", k: " + k + ", min: ", min, ", max: ", max);
 
             // look for self intersect
             for(j = 0; j < end; j++) {
                 for(k = 1; k < j; k++) {
                     if(equal(puzzle[j], puzzle[k])) {
-                        console.log("self intersect");
+                        //console.log("self intersect");
                         break;
                     }
                 }
@@ -251,10 +255,11 @@ function solvePuzzle(puzzle, twists, step) {
 
         if(step === twists.length-1) {
             console.log("puzzle solved at step: " + step);
+            console.log("number of iterations: " + niter);
             return puzzle;
         }
 
-        console.log("search for  solution at step: " + (step+1));
+        //console.log("search for  solution at step: " + (step+1));
         var solution = solvePuzzle(puzzle, twists, step+1);
         if(solution) {
             return solution;
@@ -263,7 +268,7 @@ function solvePuzzle(puzzle, twists, step) {
     // restore puzzle at current step before return
     twistPuzzle(puzzle, twists[step], 1);
     if(step === 15) {
-        console.log("all combinations exhausted, solution not found, puzzle in original shape");
+        //console.log("all combinations exhausted, solution not found, puzzle in original shape");
     } else {
         //console.log("dead end at step: " + step);
     }
